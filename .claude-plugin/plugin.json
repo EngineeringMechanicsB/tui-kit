@@ -1,0 +1,19 @@
+{
+  "name": "tui-kit",
+  "version": "0.1.0",
+  "description": "Windows CLI/TUI development kit: rich/textual patterns, reusable components, and Win7 single-file exe packaging.",
+  "author": {
+    "name": "zxw"
+  },
+  "license": "MIT",
+  "keywords": [
+    "rich",
+    "textual",
+    "tui",
+    "windows",
+    "win7",
+    "pyinstaller",
+    "packaging",
+    "cli"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "tui-kit-market",
+  "description": "Windows CLI/TUI toolkit and Win7 packaging guide.",
+  "owner": {
+    "name": "zxw"
+  },
+  "plugins": [
+    {
+      "name": "tui-kit",
+      "source": "./",
+      "description": "rich/textual components + Win7 exe packaging, with ready-to-copy assets.",
+      "version": "0.1.0",
+      "category": "productivity"
+    }
+  ]
+}

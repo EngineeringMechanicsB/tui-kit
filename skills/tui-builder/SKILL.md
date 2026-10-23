@@ -58,7 +58,8 @@ ui.summary(sum(1 for _, ok, _ in results if ok), sum(1 for _, ok, _ in results i
 
 全屏版两种：
 - `assets/app_showcase.py` —— **成品**：把 `[(步骤名, 回调)]` 丢进去就有
-  标签页 / 按钮 / 进度 / 统计卡 / 报告页（`run_tasks(...)`）
+  标签页 / 按钮 / 进度 / 统计卡 / 报告页（`run_tasks(...)`）；
+  支持 `extra_select=("标题", [(显示, 值)])` 加一个下拉框（比如选升级包）
 - `assets/app_skeleton.py` —— **骨架**：要自己设计界面时改它
 
 ## 2. 十条硬规则（全是实机踩出来的）

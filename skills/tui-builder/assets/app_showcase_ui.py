@@ -25,6 +25,7 @@ class ShowcaseApp(App):
     #toolbar { height: auto; padding: 1 2 0 2; }
     #toolbar Button { margin-right: 1; }
     #toolbar Select { width: 24; margin-left: 2; }
+    #toolbar Select#extra { width: 28; }
     #stats { height: 5; padding: 0 2; }
     .stat { width: 1fr; height: 100%; margin-right: 1;
             border: round $primary; content-align: center middle;
@@ -43,8 +44,11 @@ class ShowcaseApp(App):
     BINDINGS = [("s", "start", "开始"), ("q", "quit", "退出"),
                 ("t", "cycle_theme", "换主题")]
 
-    def __init__(self, title, tasks, meta=None, log_path=None, report=None):
+    def __init__(self, title, tasks, meta=None, log_path=None, report=None,
+                 extra_select=None, on_extra=None):
         super().__init__()
+        self.extra_select = extra_select      # (label, [(显示, 值), ...])
+        self.on_extra = on_extra
         self.title = title
         self.sub_title = "tui-kit"
         self.tasks = list(tasks)
@@ -70,6 +74,10 @@ class ShowcaseApp(App):
                     yield Label("主题")
                     yield Select(THEMES, value="textual-dark", id="theme",
                                  allow_blank=False)
+                    if self.extra_select:
+                        yield Label(self.extra_select[0])
+                        yield Select(self.extra_select[1], id="extra",
+                                     allow_blank=False)
                 with Horizontal(id="stats"):
                     for key, label in (("ok", "成功"), ("bad", "失败"),
                                        ("total", "步骤"), ("time", "耗时")):
@@ -169,6 +177,11 @@ class ShowcaseApp(App):
         self.query_one("#start").disabled = False
         self.query_one("#abort").disabled = True
         self._update_stats()
+
+    @on(Select.Changed, "#extra")
+    def _extra(self, event):
+        if self.on_extra and event.value is not None:
+            self.on_extra(event.value)
 
     @on(Select.Changed, "#theme")
     def _theme(self, event):

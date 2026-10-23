@@ -73,14 +73,15 @@ class TaskRunner(object):
 
 
 def run_tasks(title, tasks, meta=None, log_path=None, report=None,
-              extra_select=None, on_extra=None):
+              extra_select=None, on_extra=None, autostart=False):
     """启动全屏界面；返回 True 表示全部成功
 
     extra_select/on_extra: 额外下拉框（如选升级包），(标题, [(显示, 值)]) + 回调
     """
     from app_showcase_ui import ShowcaseApp
     app = ShowcaseApp(title, tasks, meta=meta, log_path=log_path, report=report,
-                      extra_select=extra_select, on_extra=on_extra)
+                      extra_select=extra_select, on_extra=on_extra,
+                      autostart=autostart)
     app.run()
     return app.all_ok
 

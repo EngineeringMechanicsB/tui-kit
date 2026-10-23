@@ -10,7 +10,7 @@
       "name": "tui-kit",
       "source": "./",
       "description": "rich/textual components + Win7 exe packaging, with ready-to-copy assets.",
-      "version": "0.2.2",
+      "version": "0.3.0",
       "category": "productivity"
     }
   ]

@@ -1,0 +1,29 @@
+{
+  "skill_name": "tui-builder",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "写一个 Windows 上的设备批量配置脚本，要能改 IP、显示进度、最后出一张结果表。现场机器有的是 Win7。",
+      "expected_output": "使用 rich（不是 textual）；调用 enable_vt / make_console；步骤用 (名称, 回调) 且不 print；有 --dry-run 与 --auto；退出码表示成败；给出 Win7 说明。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "把这个脚本打包成 Win7 能跑的单文件 exe，x64 和 x86 都要。",
+      "expected_output": "使用 build_win7.py；强调 Python 3.8.10 + PyInstaller 5.13.2 + setuptools<81；spec 里显式打包 System32\\downlevel（x86 用 SysWOW64\\downlevel）；打完用 archive_viewer 验证 ucrtbase.dll。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "帮我看看这个命令行脚本在 Win7 上会不会乱码，颜色也不对。",
+      "expected_output": "用 scripts/check_script.py 检查；指出裸 ANSI / blue / dim / emoji；建议 tui_boot 的 VT 探测与老控制台翻译；提醒宽度减 1；区分 Win7 与 Win10 路径。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "给这个升级工具加上配置文件、自动模式和测试报告，现场不想每次敲参数。",
+      "expected_output": "使用 config_kit（首次生成带注释配置、缺项回填、坏文件备份）、report_kit（md/html/json + 日志）、--auto/--steps/--dry-run、失败非零退出码。",
+      "files": []
+    }
+  ]
+}

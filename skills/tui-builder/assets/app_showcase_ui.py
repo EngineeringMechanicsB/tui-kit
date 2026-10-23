@@ -45,8 +45,9 @@ class ShowcaseApp(App):
                 ("t", "cycle_theme", "换主题")]
 
     def __init__(self, title, tasks, meta=None, log_path=None, report=None,
-                 extra_select=None, on_extra=None):
+                 extra_select=None, on_extra=None, autostart=False):
         super().__init__()
+        self.autostart = autostart
         self.extra_select = extra_select      # (label, [(显示, 值), ...])
         self.on_extra = on_extra
         self.title = title
@@ -123,7 +124,7 @@ class ShowcaseApp(App):
         self.set_interval(0.4, self._sync_layout)
         self._log("[bright_black]就绪 —— 按 s 开始[/]")
         self._update_stats()
-        if os.environ.get("SHOWCASE_AUTO"):
+        if self.autostart or os.environ.get("SHOWCASE_AUTO"):
             self.call_after_refresh(self.action_start)
 
     def _sync_layout(self):

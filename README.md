@@ -119,12 +119,17 @@ tui-kit/
 │   │   ├── packaging.md         # 打包全流程与排错
 │   │   ├── checklist.md         # 交付前检查清单
 │   │   └── sources.md           # 资料来源与取舍
-│   └── assets/
+│   ├── scripts/check_script.py     # 静态体检
+  ├── evals/evals.json            # 触发测试用例
+  └── assets/
 │       ├── tui_boot.py          # VT 探测 + 主题 + 宽度修正
 │       ├── ui_kit.py            # 菜单 / 表格 / 步骤表 / 汇总
 │       ├── app_skeleton.py      # textual 全屏骨架
 │       ├── build_win7.py        # 一键 x64 + x86 打包
-│       └── templates/script_template.py
+│       ├── templates/script_template.py
+    └── examples/                 # 两个完整可跑样例
+        ├── rich-cli/
+        └── textual-app/
 └── agents/tui-reviewer.md       # 只读审查 agent
 ```
 

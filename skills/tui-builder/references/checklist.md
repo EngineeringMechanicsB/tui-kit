@@ -2,6 +2,8 @@
 
 ## A. 代码
 
+- [ ] `python scripts/check_script.py <文件>` 没有 E 级问题
+
 - [ ] 依赖尽量少：标准库 + rich（+ requests/paramiko 业务需要）
 - [ ] 业务逻辑与界面分离：核心函数返回 `(ok, detail)`，不直接 print
 - [ ] 所有会失败的地方都有明确提示，不静默

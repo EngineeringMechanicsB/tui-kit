@@ -27,6 +27,24 @@
 结论：Textual 的中文重绘问题来自 conhost 本身，代码层面只能"建议 Windows Terminal"，
 不能修。插件里把它写成已知限制。
 
+## Skill / 插件写法（调研对象）
+
+- Anthropic 官方 `anthropics/skills` → `skill-creator/SKILL.md`
+  https://github.com/anthropics/skills
+  采纳：description 只写"何时用/何时不用"、正文 <500 行、资源分级加载、脚本承担确定性工作。
+- Anthropic Agent Skills 规范
+  https://mintlify.wiki/anthropics/skills/spec/overview
+  采纳：三层渐进披露（元数据 / SKILL.md / 资源）、reference 只嵌套一层。
+- obra/superpowers → `writing-skills`
+  https://github.com/obra/superpowers/blob/main/skills/writing-skills/SKILL.md
+  采纳：先用真实任务验证 skill 会不会被触发；"如果没看它失败过，就不知道它教对了没"。
+- hesreallyhim/awesome-claude-code
+  https://github.com/hesreallyhim/awesome-claude-code
+  参考：插件目录组织、常见组件（commands / agents / hooks）。
+
+未采纳：多智能体编排、hooks 常驻注入。本插件是"写代码时查的规范"，
+不需要在每次会话里注入内容，常驻 token 越少越好。
+
 ## Python CLI 模板（调研对象）
 
 - sschleemilch/cookiecutter-python-cli — https://github.com/sschleemilch/cookiecutter-python-cli

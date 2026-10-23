@@ -29,11 +29,14 @@ allowed-tools: Bash Read Write Edit Glob Grep
 
 详细对比与理由：`references/decision.md`。
 
-## 1. 起步：复制三个文件
+## 1. 起步：复制组件
 
 ```
-assets/tui_boot.py     # VT 探测 + 主题 + 宽度修正 + 纯文本兜底（约 150 行）
-assets/ui_kit.py       # 菜单 / 表格 / run_steps / 汇总卡片
+assets/tui_boot.py      # VT 探测 + 主题 + 宽度修正 + 纯文本兜底
+assets/ui_kit.py        # 菜单 / 表格 / run_steps / 汇总卡片 / 日志 tee
+assets/config_kit.py    # 带注释的配置文件：首次运行生成，之后自动读
+assets/report_kit.py    # 日志 + Markdown/HTML/JSON 报告
+assets/app_showcase.py  # 全屏执行器（成品，不是骨架）
 assets/templates/script_template.py   # 完整起步脚本，改 TODO 即可
 ```
 
@@ -53,7 +56,10 @@ ui.summary(sum(1 for _, ok, _ in results if ok), sum(1 for _, ok, _ in results i
 `False` / `(False, "说明")` / 抛异常算失败，异常文本自动进"说明"列。
 **不要**在回调里自己 print，会打乱实时表格。
 
-全屏版：`assets/app_skeleton.py`，三个 TODO 换成自己的业务。
+全屏版两种：
+- `assets/app_showcase.py` —— **成品**：把 `[(步骤名, 回调)]` 丢进去就有
+  标签页 / 按钮 / 进度 / 统计卡 / 报告页（`run_tasks(...)`）
+- `assets/app_skeleton.py` —— **骨架**：要自己设计界面时改它
 
 ## 2. 十条硬规则（全是实机踩出来的）
 
@@ -92,7 +98,55 @@ textual 版（`references/textual-patterns.md`）：
 - 骨架 → `assets/app_skeleton.py`
 - 表格 / 日志 / 统计卡 / 主题切换 / 模态确认 / 筛选 / 自适应都在里面
 
-## 4. 打包成 Win7 单文件
+## 4. 配置化、自动模式、报告
+
+### 4.1 配置优先
+
+所有操作都要能配置：**首次运行生成配置文件，之后每次读它，命令行只做覆盖。**
+
+```python
+from config_kit import Config
+
+cfg = Config("pai_shi_upgrade", DEFAULTS, DOCS).load()   # 没有就自动生成
+if args.host:
+    cfg["host"] = args.host          # 只在内存覆盖，不自动落盘
+```
+
+- 配置是 JSONC（`//` 注释），每项上面一行中文说明
+- 缺项自动补回；用户改坏自动备份成 `.bad-时间戳` 再重建
+- 位置默认脚本同目录（便携）；无写权限时退回用户目录
+- **禁止**把 host/密码/路径写死在代码里
+
+### 4.2 自动模式
+
+三种触发，行为一致：不弹菜单、不读输入、跑完退出并给退出码。
+
+```bash
+python app.py --auto                    # 按配置里的 steps
+python app.py --steps upload,install    # 显式指定
+python app.py < run.txt                 # stdin 非 tty 自动进入
+```
+
+- `--dry-run` 只打印计划，不连接设备
+- 失败必须 `exit 1`；批量脚本靠它统计
+- `--version` 这类只读动作要有，现场排查先跑它
+
+### 4.3 日志与报告
+
+```python
+from report_kit import Reporter
+rep = Reporter("牌识升级", target=host, out_dir="reports", log_dir="logs").start()
+rep.step("上传", True, "12.3 MB / 3.2s", seconds=3.2)
+paths = rep.finish()      # md / html / json / log
+```
+
+- 文件名带时间戳 + 目标，多台不互相覆盖
+- HTML 单文件内联样式，可直接发人
+- 每步记录耗时与失败原因
+
+完整规则：`references/config-and-automation.md`。
+
+## 5. 打包成 Win7 单文件
 
 ```bash
 python assets/build_win7.py --entry run_all.py --name wtoe-config
@@ -117,7 +171,7 @@ pip install "pyinstaller==5.13.2" "setuptools<81"
 
 细节、spec 全文、常见报错：`references/packaging.md`。
 
-## 5. 交付前清单
+## 6. 交付前清单
 
 `references/checklist.md`。至少确认：
 
@@ -127,7 +181,7 @@ pip install "pyinstaller==5.13.2" "setuptools<81"
 - [ ] exe 用 `--check` 验证过 `ucrtbase.dll`
 - [ ] 目标机是 32 位就打了 x86
 
-## 6. 参考文档
+## 7. 参考文档
 
 | 文件 | 内容 |
 |---|---|
@@ -136,10 +190,11 @@ pip install "pyinstaller==5.13.2" "setuptools<81"
 | `references/textual-patterns.md` | textual 骨架、CSS、响应式、测试 |
 | `references/win7.md` | Win7 运行时兼容全表（VT、配色、emoji、编码） |
 | `references/packaging.md` | 打包全流程、spec、UCRT、排错 |
+| `references/config-and-automation.md` | 配置化 / 自动模式 / 报告 |
 | `references/checklist.md` | 交付前检查清单 |
 | `references/sources.md` | 资料来源、实测结论、取舍 |
 
-## 7. 反模式
+## 8. 反模式
 
 - ❌ 为了"好看"引入 textual 到 Win7 机器
 - ❌ 用 ANSI 手写颜色（`\033[32m`）却不做老控制台翻译
@@ -148,8 +203,11 @@ pip install "pyinstaller==5.13.2" "setuptools<81"
 - ❌ PyInstaller 6.x 打 Win7 包
 - ❌ 依赖 PyInstaller 自动收集 UCRT
 - ❌ 把 `input()` 换成方向键菜单，结果现场输入法卡死
+- ❌ 参数写死在代码里，现场改一次就要重新打包
+- ❌ 自动模式还弹确认框，无人值守卡死
+- ❌ 有失败却 `exit 0`，批量脚本当成成功
 
-## 8. 本机现成参考实现
+## 9. 本机现成参考实现
 
 写新脚本前先看这几个（路径固定，直接 Read）：
 

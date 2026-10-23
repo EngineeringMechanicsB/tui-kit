@@ -27,7 +27,10 @@ rich / textual 选型  →  可复制组件  →  一键 Win7 打包  →  交�
 |---|---|
 | 选型矩阵 | rich / textual / 纯文本 各自适用场景，含实测代码量与体积 |
 | 运行时组件 | VT 探测、主题、宽度修正、菜单、表格、步骤表、进度、汇总卡片 |
-| 全屏骨架 | 标签页、按钮、模态框、主题切换、响应式、RichLog |
+| 配置系统 | 首次运行生成带注释配置，之后自动读取；命令行只做覆盖 |
+| 自动模式 | `--auto` / `--steps` 无人值守执行，失败返回非零退出码 |
+| 报告 | 每次运行产出 Markdown / HTML / JSON 报告 + 带时间戳日志 |
+| 全屏界面 | 成品执行器：标签页、按钮、进度、统计卡、报告页 |
 | Win7 打包 | 自动校验 Python 3.8.10 / PyInstaller 5.13.2 / setuptools<81 |
 | UCRT 打包 | 显式打入 `downlevel` 目录，裸 Win7 免装 VC++ 运行库 |
 | 自检 | 打完用 `archive_viewer` 验证 `ucrtbase.dll` 真的在包里 |
@@ -123,6 +126,32 @@ tui-kit/
 │       ├── build_win7.py        # 一键 x64 + x86 打包
 │       └── templates/script_template.py
 └── agents/tui-reviewer.md       # 只读审查 agent
+```
+
+## 配置 / 自动模式 / 报告
+
+```python
+from config_kit import Config
+from report_kit import Reporter
+from ui_kit import UI
+
+cfg = Config("mytool", DEFAULTS, DOCS).load()   # 首次运行生成 mytool_config.json
+ui = UI()
+rep = Reporter("mytool", target=cfg["host"], out_dir="reports", log_dir="logs").start()
+ui.log_fp = rep.log_fp
+
+results = ui.run_steps([("上传", do_upload), ("安装", do_install)])
+for name, ok, detail in results:
+    rep.step(name, ok, detail)
+rep.finish()          # reports/*.html + *.md + *.json, logs/*.log
+```
+
+自动模式：
+
+```bash
+python app.py --auto                    # 按配置里的 steps 跑完
+python app.py --steps upload,install    # 只跑指定步骤
+python app.py --dry-run                 # 只打印计划
 ```
 
 ## 打包示例

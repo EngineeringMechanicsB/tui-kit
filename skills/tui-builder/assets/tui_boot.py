@@ -101,7 +101,15 @@ def make_console(record=False):
         return None
     console = Console(theme=Theme(THEME), record=record)
     IS_TTY = bool(getattr(console, "is_terminal", False))
-    return _fix_width(console)
+    if IS_TTY:
+        return _fix_width(console)
+    # 管道/重定向时 rich 默认按 80 列渲染，中文表格会被截成「…」。
+    # 给个宽松宽度；需要精确控制时可设环境变量 COLUMNS。
+    try:
+        console.width = int(os.environ.get("COLUMNS") or 100)
+    except Exception:
+        pass
+    return console
 
 
 def plain(msg):

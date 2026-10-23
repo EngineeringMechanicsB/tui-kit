@@ -16,6 +16,7 @@
 
 依赖：pip install "rich==14.0.0"   （Win7 + Python 3.8 必须锁这个版本）
 """
+import os
 import time
 
 from tui_boot import (
@@ -30,19 +31,52 @@ __all__ = ["UI", "OK", "ERR", "WARN", "INFO", "SKIP", "LINE"]
 
 
 class UI(object):
-    def __init__(self):
+    def __init__(self, log_path=None):
         self.console = make_console()
         self.rich = self.console is not None
+        self.log_fp = None
+        if log_path:
+            d = os.path.dirname(log_path)
+            if d and not os.path.isdir(d):
+                os.makedirs(d)
+            self.log_fp = open(log_path, "w", encoding="utf-8")
+            self.log(u"=== 开始 %s ===" % time.strftime("%Y-%m-%d %H:%M:%S"))
+
+    # ------------------------------------------------------------ 日志
+    def _log(self, msg):
+        """写日志文件（带时间戳）。没有日志文件时什么都不做。"""
+        if not self.log_fp:
+            return
+        try:
+            line = "[%s] %s\n" % (time.strftime("%H:%M:%S"),
+                                  _strip_tags(str(msg)))
+            self.log_fp.write(line)
+            self.log_fp.flush()
+        except Exception:
+            pass
+
+    def log(self, msg):
+        """只写日志，不上屏"""
+        self._log(msg)
+
+    def close(self):
+        if self.log_fp:
+            try:
+                self.log_fp.close()
+            finally:
+                self.log_fp = None
 
     # ------------------------------------------------------------ 基础
     def print(self, msg=""):
         """普通输出。有 rich 时自动解析 [ok]xxx[/] 这类主题标记"""
+        self._log(msg)
         if self.rich:
             self.console.print(msg)
         else:
             print(_strip_tags(msg))
 
     def banner(self, title, subtitle=""):
+        self._log("%s %s" % (title, subtitle))
         if self.rich:
             _banner(self.console, title, subtitle)
         else:
@@ -53,12 +87,14 @@ class UI(object):
             print(LINE)
 
     def section(self, title):
+        self._log("-- %s --" % title)
         if self.rich:
             _section(self.console, title)
         else:
             print("\n-- %s %s" % (title, "-" * max(0, 60 - len(title))))
 
     def summary(self, ok, fail=0, skip=0, title="结果"):
+        self._log("%s 成功 %d 失败 %d 跳过 %d" % (title, ok, fail, skip))
         if self.rich:
             _summary(self.console, ok, fail, skip, title)
         else:
@@ -193,7 +229,10 @@ class UI(object):
             for i, (name, fn) in enumerate(steps):
                 state[i][1] = "进行中"
                 live.update(render(state))
+                t0 = time.time()
                 ok, detail = _call(fn)
+                self._log("%s %s %s (%.1fs)" % ("OK" if ok else "XX", name, detail,
+                                                time.time() - t0))
                 state[i][1] = "成功" if ok else "失败"
                 state[i][2] = detail
                 results.append((name, ok, detail))

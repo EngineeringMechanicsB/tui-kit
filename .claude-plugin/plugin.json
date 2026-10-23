@@ -1,6 +1,6 @@
 {
   "name": "tui-kit",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Windows CLI/TUI development kit: rich/textual patterns, reusable components, and Win7 single-file exe packaging.",
   "author": {
     "name": "zxw"

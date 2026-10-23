@@ -25,7 +25,7 @@ class ShowcaseApp(App):
     #toolbar { height: auto; padding: 1 2 0 2; }
     #toolbar Button { margin-right: 1; }
     #toolbar Select { width: 24; margin-left: 2; }
-    #toolbar Select#extra { width: 28; }
+    #toolbar Select#extra { width: 42; }
     #stats { height: 5; padding: 0 2; }
     .stat { width: 1fr; height: 100%; margin-right: 1;
             border: round $primary; content-align: center middle;

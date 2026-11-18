@@ -49,30 +49,79 @@ IS_TTY = False
 
 
 def enable_vt():
-    """尝试为 stdout 打开 VT 处理，成功返回 True。
+    """真的能着色才算开启成功。
 
-    Win10/11 的 conhost 支持 VT 但默认关闭；rich 一旦探测到没开就退回
-    16 色老渲染。这里先自己打开，rich 就会走真彩色路径。
-    Win7 上 SetConsoleMode 直接失败 → 返回 False，rich 自动走老控制台。
+    Win7 上 SetConsoleMode 会返回成功、回读那一位也显示已置，但终端根本不
+    解析 ANSI —— 只信回读会打出 ←[32m 这种干扰字符。这里做行为探针：
+    写一个红底空格，再用 ReadConsoleOutputAttribute 读回那个格子的属性，
+    背景真的是红色才认为 VT 可用；否则回退到 rich 的老控制台渲染。
     """
     if not IS_WIN:
         return True
+    if os.environ.get("NO_VT"):
+        return False
     try:
         import ctypes
+        from ctypes import wintypes
+
+        class COORD(ctypes.Structure):
+            _fields_ = [("X", ctypes.c_short), ("Y", ctypes.c_short)]
+
+        class SMALL_RECT(ctypes.Structure):
+            _fields_ = [("Left", ctypes.c_short), ("Top", ctypes.c_short),
+                        ("Right", ctypes.c_short), ("Bottom", ctypes.c_short)]
+
+        class CSBI(ctypes.Structure):
+            _fields_ = [("dwSize", COORD), ("dwCursorPosition", COORD),
+                        ("wAttributes", ctypes.c_ushort), ("srWindow", SMALL_RECT),
+                        ("dwMaximumWindowSize", COORD)]
 
         k = ctypes.windll.kernel32
         k.GetStdHandle.restype = ctypes.c_void_p
-        handle = k.GetStdHandle(-11)          # STD_OUTPUT_HANDLE
-        mode = ctypes.c_uint32()
-        if not k.GetConsoleMode(ctypes.c_void_p(handle), ctypes.byref(mode)):
-            return False                       # 管道/重定向，不是控制台
-        if mode.value & 0x0004:                # 已经开了
-            return True
-        if not k.SetConsoleMode(ctypes.c_void_p(handle), mode.value | 0x0004):
-            return False                       # Win7：调用失败
-        check = ctypes.c_uint32()
-        k.GetConsoleMode(ctypes.c_void_p(handle), ctypes.byref(check))
-        return bool(check.value & 0x0004)      # 回读，别信返回值
+        k.GetConsoleMode.argtypes = [ctypes.c_void_p, ctypes.POINTER(wintypes.DWORD)]
+        k.SetConsoleMode.argtypes = [ctypes.c_void_p, wintypes.DWORD]
+        k.GetConsoleScreenBufferInfo.argtypes = [ctypes.c_void_p,
+                                                ctypes.POINTER(CSBI)]
+        k.ReadConsoleOutputAttribute.argtypes = [
+            ctypes.c_void_p, ctypes.POINTER(wintypes.WORD), wintypes.DWORD,
+            COORD, ctypes.POINTER(wintypes.DWORD)]
+        k.SetConsoleCursorPosition.argtypes = [ctypes.c_void_p, COORD]
+        k.SetConsoleTextAttribute.argtypes = [ctypes.c_void_p, wintypes.WORD]
+        handle = ctypes.c_void_p(k.GetStdHandle(-11))
+        mode = wintypes.DWORD()
+        if not k.GetConsoleMode(handle, ctypes.byref(mode)):
+            return False                       # 管道/重定向
+        original = mode.value
+        if not (original & 0x0004):
+            if not k.SetConsoleMode(handle, original | 0x0004):
+                return False                   # Win7：调用失败
+            after = wintypes.DWORD()
+            k.GetConsoleMode(handle, ctypes.byref(after))
+            if not (after.value & 0x0004):
+                return False
+
+        info = CSBI()
+        if not k.GetConsoleScreenBufferInfo(handle, ctypes.byref(info)):
+            return False
+        pos = info.dwCursorPosition
+        probe = "[41m [0m"
+        sys.stdout.write(probe)
+        sys.stdout.flush()
+        attr = wintypes.WORD(0)
+        got = wintypes.DWORD(0)
+        ok_read = k.ReadConsoleOutputAttribute(
+            handle, ctypes.byref(attr), 1, pos, ctypes.byref(got))
+        works = bool(ok_read and got.value == 1 and ((attr.value >> 4) & 0x0F) == 0x04)
+
+        # 擦掉探针痕迹，光标归位
+        k.SetConsoleCursorPosition(handle, pos)
+        k.SetConsoleTextAttribute(handle, info.wAttributes & 0xFF)
+        sys.stdout.write(" " * len(probe))
+        sys.stdout.flush()
+        k.SetConsoleCursorPosition(handle, pos)
+        if not works:
+            k.SetConsoleMode(handle, original)
+        return works
     except Exception:
         return False
 

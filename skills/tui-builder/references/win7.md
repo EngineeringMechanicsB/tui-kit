@@ -14,7 +14,12 @@ vt = mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING(0x0004)
 - Win7 conhost：不支持，`SetConsoleMode` 调用失败
 - 陷阱：Win7 上某些 wrapper 让调用返回"成功"，但位没置上 → **必须回读**
 
-`tui_boot.enable_vt()` 已实现（设置 → 回读 → 返回布尔）。
+`tui_boot.enable_vt()` 已实现（设置 → **行为探针** → 返回布尔）。
+
+只回读是不够的：Win7 上 SetConsoleMode 会返回成功、回读那一位也显示已置，
+但终端根本不解析 ANSI。正确做法是写一个红底空格，再用
+`ReadConsoleOutputAttribute` 读回该格属性，背景真的是红色才算可用。
+不通过就一律走 rich 的老控制台渲染。
 
 ## 2. 三种渲染路径
 
@@ -103,6 +108,8 @@ rich / textual 内部已处理，只有纯文本兜底需要自己算（`ui_kit.
 
 ## 8. 输入
 
+- **不要给 `input()` 传带 ANSI 的提示串**：Windows 下 input 的提示绕过
+  `sys.stdout` 包装，会原样打出 `←[36m`。先 `print(prompt, end="")` 再 `input()`。
 - 只用 `input()` / `getpass`
 - 不用 `msvcrt.kbhit()` 做方向键菜单：老控制台 + 中文输入法会双触发
 - 管道调用（`echo 1 | app.exe`）：`input()` 抛 `EOFError`，要捕获后取默认值
